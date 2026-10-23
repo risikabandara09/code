@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Risika — 3D Travelling Microscope Virtual Physics Laboratory</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><circle cx=%2250%22 cy=%2250%22 r=%2245%22 fill=%22%230284c7%22/><circle cx=%2250%22 cy=%2250%22 r=%2220%22 fill=%22none%22 stroke=%22white%22 stroke-width=%228%22/><line x1=%2250%22 y1=%2210%22 x2=%2250%22 y2=%2290%22 stroke=%22white%22 stroke-width=%226%22/><line x1=%2210%22 y1=%2250%22 x2=%2290%22 y2=%2250%22 stroke=%22white%22 stroke-width=%226%22/></svg>">
+</head>
+<body>
+
+    <!-- APPLICATION HEADER -->
+    <header class="app-header">
+        <div class="brand-section">
+            <div class="brand-logo">
+                <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/></svg>
+            </div>
+            <div>
+                <span class="brand-title">Risika</span>
+                <span class="brand-badge">3D Travelling Microscope</span>
+            </div>
+        </div>
+
+        <div class="header-center">
+            <div class="exp-select-wrapper">
+                <label for="expSelect">Experiment:</label>
+                <select id="expSelect" class="exp-dropdown">
+                    <option value="capillary">Capillary Tube Bore Diameter</option>
+                    <option value="glass_slab">Refractive Index of Glass Slab</option>
+                    <option value="newtons_rings">Newton's Rings Fringe Diameters</option>
+                    <option value="calibration">Free Exploration & Vernier Practice</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="header-actions">
+            <button id="btnToggleHUD" class="btn-action">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h16v16H4V4zm2 2v12h12V6H6z"/></svg>
+                Full 3D View
+            </button>
+            <button id="btnQuiz" class="btn-action">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                Quiz Mode
+            </button>
+            <button id="btnTheory" class="btn-action">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                Theory & Formulas
+            </button>
+            <button id="btnResetView" class="btn-action btn-accent">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+                Reset Position
+            </button>
+        </div>
+    </header>
+
+    <!-- MAIN APP WORKSPACE -->
+    <main class="app-workspace">
+
+        <!-- 3D WEBGL VIEWPORT -->
+        <div id="viewport3d" class="viewport-3d">
+            <!-- 3D Camera Angles Bar -->
+            <div class="camera-hud">
+                <button class="btn-cam active" data-cam="overview">Overview</button>
+                <button class="btn-cam" data-cam="eyepiece">Top-Down Eyepiece</button>
+                <button class="btn-cam" data-cam="horizScale">Horizontal Scale</button>
+                <button class="btn-cam" data-cam="vertScale">Vertical Pillar</button>
+                <button class="btn-cam" data-cam="specimen">Specimen Stage</button>
+            </div>
+        </div>
+
+        <!-- LEFT DOCK: OPTICS & VERNIER LOUPE -->
+        <div class="left-dock">
+
+            <!-- Eyepiece View Panel -->
+            <section class="panel panel-eyepiece">
+                <div class="panel-header">
+                    <span class="panel-title">
+                        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><line x1="12" y1="3" x2="12" y2="21" stroke="currentColor" stroke-width="1.5"/><line x1="3" y1="12" x2="21" y2="12" stroke="currentColor" stroke-width="1.5"/></svg>
+                        Eyepiece Reticle View
+                    </span>
+                    <span id="focusStatusBadge" class="focus-badge">In Sharp Focus</span>
+                </div>
+                <div class="panel-body">
+                    <div class="eyepiece-container">
+                        <div class="eyepiece-canvas-wrap">
+                            <canvas id="eyepieceCanvas" width="400" height="400"></canvas>
+                        </div>
+                        <div class="eyepiece-toolbar">
+                            <div class="mag-pill-group">
+                                <button class="btn-mag" data-mag="10">10×</button>
+                                <button class="btn-mag active" data-mag="20">20×</button>
+                                <button class="btn-mag" data-mag="40">40×</button>
+                            </div>
+                            <button id="btnToggleReticle" class="btn-action" style="padding: 3px 8px; font-size: 0.7rem;">
+                                Crosshairs On
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Vernier Scale Loupe Panel -->
+            <section class="panel panel-vernier">
+                <div class="panel-header">
+                    <span class="panel-title">
+                        <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z"/></svg>
+                        Vernier Loupe Reader
+                    </span>
+                    <div class="vernier-tabs">
+                        <button id="tabScaleX" class="btn-scale-tab active">Horizontal (X)</button>
+                        <button id="tabScaleY" class="btn-scale-tab">Vertical (Y)</button>
+                    </div>
+                </div>
+                <div class="panel-body">
+                    <div class="vernier-canvas-wrap">
+                        <canvas id="vernierCanvas" width="600" height="240"></canvas>
+                    </div>
+                    <!-- Live Precision Readout -->
+                    <div class="vernier-readout-card">
+                        <div class="readout-row">
+                            <span>Main Scale Reading (MSR):</span>
+                            <span id="txtMSR" class="readout-val">32.00 mm (3.20 cm)</span>
+                        </div>
+                        <div class="readout-row">
+                            <span>Vernier Coincidence (VSR):</span>
+                            <span id="txtVSR" class="readout-val">47 div × 0.01 mm</span>
+                        </div>
+                        <div class="readout-row readout-total">
+                            <span>Total Reading (MSR + VSR×LC):</span>
+                            <span id="txtTotal" class="readout-val">32.47 mm (3.247 cm)</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+
+        <!-- RIGHT DOCK: CONTROLS & EXPERIMENT GUIDE -->
+        <div class="right-dock">
+
+            <!-- Precision Controls Panel -->
+            <section class="panel panel-controls">
+                <div class="panel-header">
+                    <span class="panel-title">
+                        <svg viewBox="0 0 24 24"><path d="M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z"/></svg>
+                        Precision Micrometer Controls
+                    </span>
+                </div>
+                <div class="panel-body">
+                    <!-- Horizontal Carriage (X) -->
+                    <div class="control-group">
+                        <div class="control-label-row">
+                            <span class="control-name">Horizontal Traverse (X)</span>
+                            <span id="numPosX" class="control-live-num">32.47 mm</span>
+                        </div>
+                        <input id="sliderPosX" type="range" class="range-slider" min="0" max="150" step="0.01" value="32.47">
+                        <div class="jog-button-row">
+                            <button class="btn-jog" data-axis="x" data-delta="-1.0">-1.0</button>
+                            <button class="btn-jog" data-axis="x" data-delta="-0.1">-0.1</button>
+                            <button class="btn-jog" data-axis="x" data-delta="-0.01">-0.01</button>
+                            <button class="btn-jog" data-axis="x" data-delta="0.01">+0.01</button>
+                            <button class="btn-jog" data-axis="x" data-delta="0.1">+0.1</button>
+                            <button class="btn-jog" data-axis="x" data-delta="1.0">+1.0</button>
+                        </div>
+                    </div>
+
+                    <!-- Vertical Carriage (Y) -->
+                    <div class="control-group">
+                        <div class="control-label-row">
+                            <span class="control-name">Vertical Pillar (Y)</span>
+                            <span id="numPosY" class="control-live-num">25.00 mm</span>
+                        </div>
+                        <input id="sliderPosY" type="range" class="range-slider" min="0" max="100" step="0.01" value="25.00">
+                        <div class="jog-button-row">
+                            <button class="btn-jog" data-axis="y" data-delta="-1.0">-1.0</button>
+                            <button class="btn-jog" data-axis="y" data-delta="-0.1">-0.1</button>
+                            <button class="btn-jog" data-axis="y" data-delta="-0.01">-0.01</button>
+                            <button class="btn-jog" data-axis="y" data-delta="0.01">+0.01</button>
+                            <button class="btn-jog" data-axis="y" data-delta="0.1">+0.1</button>
+                            <button class="btn-jog" data-axis="y" data-delta="1.0">+1.0</button>
+                        </div>
+                    </div>
+
+                    <!-- Focus Knob (Rack & Pinion) -->
+                    <div class="control-group">
+                        <div class="control-label-row">
+                            <span class="control-name">Rack-and-Pinion Focus</span>
+                            <span id="numFocusZ" class="control-live-num">50.00 mm</span>
+                        </div>
+                        <input id="sliderFocusZ" type="range" class="range-slider" min="30" max="80" step="0.1" value="50.0">
+                        <div class="jog-button-row">
+                            <button class="btn-jog" data-axis="z" data-delta="-2.0">-2.0</button>
+                            <button class="btn-jog" data-axis="z" data-delta="-0.5">-0.5</button>
+                            <button class="btn-jog" data-axis="z" data-delta="-0.1">-0.1</button>
+                            <button class="btn-jog" data-axis="z" data-delta="0.1">+0.1</button>
+                            <button class="btn-jog" data-axis="z" data-delta="0.5">+0.5</button>
+                            <button class="btn-jog" data-axis="z" data-delta="2.0">+2.0</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Guided Experiment & Lab Notebook Panel -->
+            <section class="panel panel-notebook">
+                <div class="panel-header">
+                    <span class="panel-title">
+                        <svg viewBox="0 0 24 24"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H8V4h12v12z"/></svg>
+                        Lab Notebook & Guide
+                    </span>
+                    <button id="btnExportCSV" class="btn-action" style="padding: 2px 8px; font-size: 0.7rem;">Export CSV</button>
+                </div>
+                <div class="panel-body">
+                    <!-- Dynamic Experiment Step Instruction -->
+                    <div class="guide-step-card">
+                        <div id="guideStepTitle" class="guide-step-title">Step 1: Alignment</div>
+                        <div id="guideStepText" class="guide-step-text">Focus and align crosshair with the target.</div>
+                        <div id="guideHint" class="guide-hint">Hint: Adjust focus knob to sharpen the image.</div>
+                    </div>
+
+                    <!-- Log Action Buttons -->
+                    <div class="log-actions">
+                        <button id="btnLogReading" class="btn-log">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                            Record to Notebook
+                        </button>
+                        <button id="btnClearLog" class="btn-action" style="padding: 6px 10px;">Clear</button>
+                    </div>
+
+                    <!-- Readings Log Table -->
+                    <div class="log-table-container">
+                        <table class="log-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Label</th>
+                                    <th>Horiz (mm)</th>
+                                    <th>Vert (mm)</th>
+                                    <th>Focus</th>
+                                </tr>
+                            </thead>
+                            <tbody id="logTableBody">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Experiment Calculation Output -->
+                    <div id="expResultCard" class="experiment-result-card" style="display: none;">
+                        <div id="expResultTitle" class="result-header">Calculated Experiment Results</div>
+                        <div id="expResultMetrics">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+
+    </main>
+
+    <!-- MODAL: QUIZ & READING TESTER -->
+    <div id="quizModal" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <span class="modal-title">Vernier Scale Reading Quiz</span>
+                <button class="btn-close-modal" data-close="quizModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>Test your vernier reading skills! A random micrometer position has been set. Look at the Vernier Loupe on the left and enter your readings below:</p>
+                <div class="quiz-input-group">
+                    <div class="quiz-field">
+                        <label for="inputQuizMSR">1. Main Scale Reading (MSR in mm):</label>
+                        <input id="inputQuizMSR" type="number" step="0.5" placeholder="e.g. 32.0">
+                    </div>
+                    <div class="quiz-field">
+                        <label for="inputQuizVSR">2. Vernier Coincident Division (VSR, 0 to 49):</label>
+                        <input id="inputQuizVSR" type="number" step="1" placeholder="e.g. 47">
+                    </div>
+                    <div class="quiz-field">
+                        <label for="inputQuizTotal">3. Total Reading (mm):</label>
+                        <input id="inputQuizTotal" type="number" step="0.01" placeholder="MSR + (VSR × 0.01)">
+                    </div>
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 10px;">
+                    <button id="btnSubmitQuiz" class="btn-action btn-accent" style="flex: 1; padding: 10px;">Submit Answer</button>
+                    <button id="btnNewQuizQuestion" class="btn-action" style="padding: 10px;">New Random Position</button>
+                </div>
+                <div id="quizFeedback" class="quiz-feedback"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: THEORY & FORMULAS -->
+    <div id="theoryModal" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <span class="modal-title">Travelling Microscope — Physics Theory & Principles</span>
+                <button class="btn-close-modal" data-close="theoryModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <h4>1. Principle of the Travelling Microscope</h4>
+                <p>A travelling microscope is a precision compound microscope mounted on a dual-axis carriage (horizontal and vertical) that can be moved with millimeter graduated main scales and sub-millimeter vernier scales. It is widely used to measure small dimensions with an accuracy of <strong>0.01 mm (0.001 cm)</strong> without damaging delicate specimens.</p>
+
+                <h4>2. Least Count (LC) Formula</h4>
+                <div class="formula-box">
+                    1 Main Scale Division (MSD) = 0.5 mm = 0.05 cm<br>
+                    50 Vernier Scale Divisions (VSD) = 49 MSD = 24.5 mm<br>
+                    1 VSD = 24.5 / 50 = 0.49 mm<br>
+                    <strong>Least Count (LC) = 1 MSD - 1 VSD = 0.5 mm - 0.49 mm = 0.01 mm (0.001 cm)</strong>
+                </div>
+
+                <h4>3. Calculating Total Reading</h4>
+                <div class="formula-box">
+                    <strong>Total Reading = MSR + (VSR × Least Count)</strong><br>
+                    Example: If MSR = 32.0 mm and 47th vernier division coincides with a main scale line:<br>
+                    Total = 32.0 + (47 × 0.01) = <strong>32.47 mm = 3.247 cm</strong>
+                </div>
+
+                <h4>4. Capillary Tube Bore Measurement</h4>
+                <p>Align the vertical crosswire with the left inside edge ($R_1$), then move horizontally to the right inside edge ($R_2$).</p>
+                <div class="formula-box">
+                    Internal Diameter: d = |R₂ - R₁|<br>
+                    Internal Radius: r = d / 2
+                </div>
+
+                <h4>5. Refractive Index (μ) of Glass Slab</h4>
+                <p>Based on the principle of Real and Apparent Depth:</p>
+                <div class="formula-box">
+                    R₁ = Reading focused on ink dot on paper without slab<br>
+                    R₂ = Reading focused on ink dot through glass slab (apparent position)<br>
+                    R₃ = Reading focused on lycopodium powder on top surface of slab<br>
+                    <strong>Refractive Index μ = (R₃ - R₁) / (R₃ - R₂) = Real Thickness / Apparent Thickness</strong>
+                </div>
+
+                <h4>6. Keyboard Shortcuts</h4>
+                <p>
+                    • <code>← / →</code> : Move Horizontal carriage fine adjustment<br>
+                    • <code>↑ / ↓</code> : Move Vertical pillar fine adjustment<br>
+                    • <code>W / S</code> or <code>PageUp / PageDown</code> : Adjust rack-and-pinion focus<br>
+                    • <code>Spacebar</code> : Log current reading to virtual notebook
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Three.js Engine & OrbitControls (Local Offline + CDN Fallback) -->
+    <script src="js/vendor/three.min.js"></script>
+    <script>
+        if (typeof THREE === 'undefined') {
+            document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>');
+        }
+    </script>
+    <script src="js/vendor/OrbitControls.js"></script>
+    <script>
+        if (typeof THREE !== 'undefined' && typeof THREE.OrbitControls === 'undefined') {
+            document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"><\/script>');
+        }
+    </script>
+
+    <!-- Risika Application Engine -->
+    <script src="js/app.js"></script>
+</body>
+</html>
